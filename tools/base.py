@@ -1,12 +1,14 @@
 from __future__ import annotations
 import abc
 from ast import Return
-from dataclasses import Field, dataclass
+from dataclasses import Field, dataclass, field
 from pathlib import Path
 from typing import Any
 from pydantic import BaseModel, ValidationError
 from enum import Enum
 from pydantic.json_schema import model_json_schema
+from regex import F
+from streamlit import success
 
 
 @dataclass
@@ -20,7 +22,15 @@ class ToolResults:
     success : bool
     output : str
     error : str | None = None
-    metadata : dict[str, Any] = Field(default_factory=dict)
+    metadata : dict[str, Any] = field(default_factory=dict)
+    truncated : bool = False
+    @classmethod
+    def error_results(cls, error : str = "", output : str = "", **kwargs):
+        return cls(success=False, output=output, error=error, **kwargs)
+    
+    @classmethod
+    def success_results(cls,output : str, **kwargs):
+        return cls(success=True, output=output, **kwargs)
 
 @dataclass
 class ToolConfirmation:
@@ -53,7 +63,7 @@ class Tool(abc.ABC):
     
     @abc.abstractmethod
     async def execute(self, invocation : ToolInvocation) -> ToolResults:
-        ...
+        pass
         
     
     def validate_params(self, params : dict[str, Any]):
